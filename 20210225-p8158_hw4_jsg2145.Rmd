@@ -26,3 +26,63 @@ scale_colour_discrete = scale_colour_viridis_d
 scale_fill_discrete = scale_fill_viridis_d
 theme_set(theme_minimal() + theme(legend.position = "bottom"))
 ```
+
+```{r}
+data = read_csv("./data/project eat mom care and encourage with names.csv") %>% 
+  janitor::clean_names() %>% 
+  mutate(.cols = everything(-id -gender -race), across(.fns = ~recode(., "0" = 2)))
+
+head(data)
+nrow(data)
+names(data)
+```
+
+# LCA 2 class
+
+```{r}
+fit1 = poLCA(formula = cbind(momhlth, momfit, momdiet, mom_myfd, mom_mypa, mom_mywt)~1, data = data, nclass = 2)
+```
+
+So, in a 2 class LCA model, class 1 is characterized by a high probability of endorsing the items momhlth, momfit, mom_myfd, and mom_mypa and relatively low endorsement of mom_mywt indicating this class may be capturing those who have health-conscious mothers who are not too concerned about weight loss. Overall, most of the respondents (89%) were categorized in class 1.
+
+# LCA 3 class
+
+```{r}
+fit2 = poLCA(formula = cbind(momhlth, momfit, momdiet, mom_myfd, mom_mypa, mom_mywt)~1, data = data, nclass = 3)
+```
+
+In a 3 class model, one class includes individuals who endorse momhlth, momfit, momdiet, mom_myfd, and mom_mypa, but not mom_mywt, which is comparable to another class that has a high probability of endorsing momhealth, momfit, mom_myfd, and mom_mypa, but very unlikely to endorse momdiet, which may show that this model differentiates between mothers who actively engage in dieting and those whose attitudes towards health and exercise do not include dieting to lose weight. A third class is less likely to endorse all the items except momhlth.
+
+# 4 class LCA
+
+```{r}
+fit3 = poLCA(formula = cbind(momhlth, momfit, momdiet, mom_myfd, mom_mypa, mom_mywt)~1, data = data, nclass = 4)
+```
+
+In a 4 class LCA model, there is a class of individuals who are very likely to endorse the items momhlth, momfit, momdiet, mom_myfd, and mom_mypa, while another is very unlikely to endorse momdiet, and a third is very unlikely to endorse mom_mywt. This indicates that there is a difference in the opinions of children about a mother's attitudes towards health and exercise based on whether the mother engages in dieting to lose weight and shows concern for weight control in the child.
+
+```{r, results = "hide"}
+fit3_postprob = fit3$posterior %>% 
+  as_tibble()
+
+fit3$y %>% 
+  add_column(fit3$predclass) %>% 
+  add_column(fit3_postprob) %>% 
+  rename(predClass = "fit3$predclass") %>% 
+  mutate(total = n()) %>% 
+  group_by(momhlth, momfit, momdiet, mom_myfd, mom_mypa, mom_mywt, predClass) %>% 
+  mutate(prob = round(n()/total*100, 2)) %>%
+  distinct() %>% 
+  arrange(desc(V4))
+```
+
+Interestingly, there are 51 unique responses, and 64 possible response outcomes ($2^6$).
+
+The pattern 110111 is categorized in a class that has high rates of endorsement for all the items except momdiet and mom_mywt. 
+
+The pattern 000000 is categorized in a class that appears less likely to endorse all the items.
+
+The pattern 111000 is categorized in a class that has high rates of endorsement for momhlth and momfit, but middling and low endorsement for other items.
+
+The pattern 111111 is categorized in a class that is very likely to endorse all the items except mom_mywt.
+
