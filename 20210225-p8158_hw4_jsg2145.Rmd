@@ -37,19 +37,81 @@ nrow(data)
 names(data)
 ```
 
-# LCA 2 class
+### functions for tables
 
 ```{r}
+postpredclass = function(fit = fit1) {
+
+  posterior_df = fit$posterior %>% 
+    as_tibble()
+  
+  extable = fit$y %>% 
+    add_column(fit$predclass) %>% 
+    add_column(posterior_df) %>% 
+    rename(predClass = "fit$predclass") %>% 
+    # mutate(total = n()) %>% 
+    # group_by(momhlth, momfit, momdiet, mom_myfd, mom_mypa, mom_mywt, predClass) %>% 
+    # mutate(prob = round(n()/total*100, 2)) %>%
+    # distinct() %>% 
+    arrange(predClass) %>% 
+    head()
+  
+  return(extable)
+}
+```
+
+```{r}
+cleanoutput = function(fit = fit1) {
+  result <-
+    round(
+  rbind(fit$probs$momhlth[,2],
+  fit$probs$momfit[,2],
+  fit$probs$momdiet[,2],
+  fit$probs$mom_myfd[,2],
+  fit$probs$mom_mypa[,2],
+  fit$probs$mom_mywt[,2])*100,1)
+  
+  output = result %>% 
+    data.frame(row.names = c("momhlth", "momfit", "momdiet", "mom_myfd", "mom_mypa", "mom_mywt")) %>% 
+    as_tibble(rownames = NA) %>% 
+    rownames_to_column() %>% 
+    janitor::clean_names()
+  
+  return(output)
+}
+```
+
+# LCA 2 class
+
+
+
+```{r, results = "hide"}
 fit1 = poLCA(formula = cbind(momhlth, momfit, momdiet, mom_myfd, mom_mypa, mom_mywt)~1, data = data, nclass = 2)
 ```
+
+```{r}
+postpredclass(fit1)
+
+cleanoutput(fit1)
+```
+
 
 So, in a 2 class LCA model, class 1 is characterized by a high probability of endorsing the items momhlth, momfit, mom_myfd, and mom_mypa and relatively low endorsement of mom_mywt indicating this class may be capturing those who have health-conscious mothers who are not too concerned about weight loss. Overall, most of the respondents (89%) were categorized in class 1.
 
 # LCA 3 class
 
-```{r}
+```{r, results = "hide"}
 fit2 = poLCA(formula = cbind(momhlth, momfit, momdiet, mom_myfd, mom_mypa, mom_mywt)~1, data = data, nclass = 3)
 ```
+
+```{r}
+postpredclass(fit2)
+```
+
+```{r}
+cleanoutput(fit2)
+```
+
 
 In a 3 class model, one class includes individuals who endorse momhlth, momfit, momdiet, mom_myfd, and mom_mypa, but not mom_mywt, which is comparable to another class that has a high probability of endorsing momhealth, momfit, mom_myfd, and mom_mypa, but very unlikely to endorse momdiet, which may show that this model differentiates between mothers who actively engage in dieting and those whose attitudes towards health and exercise do not include dieting to lose weight. A third class is less likely to endorse all the items except momhlth.
 
@@ -59,22 +121,18 @@ In a 3 class model, one class includes individuals who endorse momhlth, momfit, 
 fit3 = poLCA(formula = cbind(momhlth, momfit, momdiet, mom_myfd, mom_mypa, mom_mywt)~1, data = data, nclass = 4)
 ```
 
+```{r}
+postpredclass(fit3)
+```
+
+```{r}
+cleanoutput(fit3)
+```
+
+
 In a 4 class LCA model, there is a class of individuals who are very likely to endorse the items momhlth, momfit, momdiet, mom_myfd, and mom_mypa, while another is very unlikely to endorse momdiet, and a third is very unlikely to endorse mom_mywt. This indicates that there is a difference in the opinions of children about a mother's attitudes towards health and exercise based on whether the mother engages in dieting to lose weight and shows concern for weight control in the child.
 
-```{r, results = "hide"}
-fit3_postprob = fit3$posterior %>% 
-  as_tibble()
-
-fit3$y %>% 
-  add_column(fit3$predclass) %>% 
-  add_column(fit3_postprob) %>% 
-  rename(predClass = "fit3$predclass") %>% 
-  mutate(total = n()) %>% 
-  group_by(momhlth, momfit, momdiet, mom_myfd, mom_mypa, mom_mywt, predClass) %>% 
-  mutate(prob = round(n()/total*100, 2)) %>%
-  distinct() %>% 
-  arrange(desc(V4))
-```
+# examples
 
 Interestingly, there are 51 unique responses, and 64 possible response outcomes ($2^6$).
 

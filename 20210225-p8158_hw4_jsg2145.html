@@ -400,126 +400,103 @@ head(data)</code></pre>
 <pre><code>##  [1] &quot;id&quot;       &quot;gender&quot;   &quot;race&quot;     &quot;ovwt&quot;     &quot;cohort&quot;   &quot;momhlth&quot; 
 ##  [7] &quot;momfit&quot;   &quot;momdiet&quot;  &quot;mom_myfd&quot; &quot;mom_mypa&quot; &quot;mom_mywt&quot; &quot;dadhlth&quot; 
 ## [13] &quot;dadfit&quot;   &quot;daddiet&quot;  &quot;dad_myfd&quot; &quot;dad_mypa&quot; &quot;dad_mywt&quot; &quot;.cols&quot;</code></pre>
+<div id="functions-for-tables" class="section level3">
+<h3>functions for tables</h3>
+<pre class="r"><code>postpredclass = function(fit = fit1) {
+
+  posterior_df = fit$posterior %&gt;% 
+    as_tibble()
+  
+  extable = fit$y %&gt;% 
+    add_column(fit$predclass) %&gt;% 
+    add_column(posterior_df) %&gt;% 
+    rename(predClass = &quot;fit$predclass&quot;) %&gt;% 
+    # mutate(total = n()) %&gt;% 
+    # group_by(momhlth, momfit, momdiet, mom_myfd, mom_mypa, mom_mywt, predClass) %&gt;% 
+    # mutate(prob = round(n()/total*100, 2)) %&gt;%
+    # distinct() %&gt;% 
+    arrange(predClass) %&gt;% 
+    head()
+  
+  return(extable)
+}</code></pre>
+<pre class="r"><code>cleanoutput = function(fit = fit1) {
+  result &lt;-
+    round(
+  rbind(fit$probs$momhlth[,2],
+  fit$probs$momfit[,2],
+  fit$probs$momdiet[,2],
+  fit$probs$mom_myfd[,2],
+  fit$probs$mom_mypa[,2],
+  fit$probs$mom_mywt[,2])*100,1)
+  
+  output = result %&gt;% 
+    data.frame(row.names = c(&quot;momhlth&quot;, &quot;momfit&quot;, &quot;momdiet&quot;, &quot;mom_myfd&quot;, &quot;mom_mypa&quot;, &quot;mom_mywt&quot;)) %&gt;% 
+    as_tibble(rownames = NA) %&gt;% 
+    rownames_to_column() %&gt;% 
+    janitor::clean_names()
+  
+  return(output)
+}</code></pre>
+</div>
 <div id="lca-2-class" class="section level1">
 <h1>LCA 2 class</h1>
 <pre class="r"><code>fit1 = poLCA(formula = cbind(momhlth, momfit, momdiet, mom_myfd, mom_mypa, mom_mywt)~1, data = data, nclass = 2)</code></pre>
-<pre><code>## Conditional item response (column) probabilities,
-##  by outcome variable, for each class (row) 
-##  
-## $momhlth
-##            Pr(1)  Pr(2)
-## class 1:  0.9964 0.0036
-## class 2:  0.6946 0.3054
-## 
-## $momfit
-##            Pr(1)  Pr(2)
-## class 1:  0.9791 0.0209
-## class 2:  0.4695 0.5305
-## 
-## $momdiet
-##            Pr(1)  Pr(2)
-## class 1:  0.6779 0.3221
-## class 2:  0.2670 0.7330
-## 
-## $mom_myfd
-##            Pr(1)  Pr(2)
-## class 1:  0.9805 0.0195
-## class 2:  0.4666 0.5334
-## 
-## $mom_mypa
-##            Pr(1)  Pr(2)
-## class 1:  0.9747 0.0253
-## class 2:  0.3683 0.6317
-## 
-## $mom_mywt
-##            Pr(1)  Pr(2)
-## class 1:  0.2998 0.7002
-## class 2:  0.0860 0.9140
-## 
-## Estimated class population shares 
-##  0.8944 0.1056 
-##  
-## Predicted class memberships (by modal posterior prob.) 
-##  0.8898 0.1102 
-##  
-## ========================================================= 
-## Fit for 2 latent classes: 
-## ========================================================= 
-## number of observations: 2060 
-## number of estimated parameters: 13 
-## residual degrees of freedom: 50 
-## maximum log-likelihood: -4187.876 
-##  
-## AIC(2): 8401.753
-## BIC(2): 8474.949
-## G^2(2): 326.4551 (Likelihood ratio/deviance statistic) 
-## X^2(2): 326.8081 (Chi-square goodness of fit) 
-## </code></pre>
+<pre class="r"><code>postpredclass(fit1)</code></pre>
+<pre><code>##   momhlth momfit momdiet mom_myfd mom_mypa mom_mywt predClass        V1
+## 1       1      1       1        1        1        1         1 0.9991985
+## 2       1      1       1        1        1        2         1 0.9963628
+## 3       1      1       1        1        1        1         1 0.9991985
+## 4       1      1       1        1        1        1         1 0.9991985
+## 5       1      1       2        1        1        2         1 0.9793528
+## 6       1      1       1        1        1        1         1 0.9991985
+##             V2
+## 1 0.0008014671
+## 2 0.0036371897
+## 3 0.0008014671
+## 4 0.0008014671
+## 5 0.0206472438
+## 6 0.0008014671</code></pre>
+<pre class="r"><code>cleanoutput(fit1)</code></pre>
+<pre><code>## # A tibble: 6 x 3
+##   rowname  class_1 class_2
+##   &lt;chr&gt;      &lt;dbl&gt;   &lt;dbl&gt;
+## 1 momhlth      0.4    30.5
+## 2 momfit       2.1    53  
+## 3 momdiet     32.2    73.3
+## 4 mom_myfd     2      53.3
+## 5 mom_mypa     2.5    63.2
+## 6 mom_mywt    70      91.4</code></pre>
 <p>So, in a 2 class LCA model, class 1 is characterized by a high probability of endorsing the items momhlth, momfit, mom_myfd, and mom_mypa and relatively low endorsement of mom_mywt indicating this class may be capturing those who have health-conscious mothers who are not too concerned about weight loss. Overall, most of the respondents (89%) were categorized in class 1.</p>
 </div>
 <div id="lca-3-class" class="section level1">
 <h1>LCA 3 class</h1>
 <pre class="r"><code>fit2 = poLCA(formula = cbind(momhlth, momfit, momdiet, mom_myfd, mom_mypa, mom_mywt)~1, data = data, nclass = 3)</code></pre>
-<pre><code>## Conditional item response (column) probabilities,
-##  by outcome variable, for each class (row) 
-##  
-## $momhlth
-##            Pr(1)  Pr(2)
-## class 1:  0.6395 0.3605
-## class 2:  0.9948 0.0052
-## class 3:  1.0000 0.0000
-## 
-## $momfit
-##            Pr(1)  Pr(2)
-## class 1:  0.4664 0.5336
-## class 2:  0.9889 0.0111
-## class 3:  0.9330 0.0670
-## 
-## $momdiet
-##            Pr(1)  Pr(2)
-## class 1:  0.2935 0.7065
-## class 2:  1.0000 0.0000
-## class 3:  0.0003 0.9997
-## 
-## $mom_myfd
-##            Pr(1)  Pr(2)
-## class 1:  0.3831 0.6169
-## class 2:  0.9769 0.0231
-## class 3:  0.9852 0.0148
-## 
-## $mom_mypa
-##            Pr(1)  Pr(2)
-## class 1:  0.3002 0.6998
-## class 2:  0.9716 0.0284
-## class 3:  0.9690 0.0310
-## 
-## $mom_mywt
-##            Pr(1)  Pr(2)
-## class 1:  0.0978 0.9022
-## class 2:  0.3859 0.6141
-## class 3:  0.1117 0.8883
-## 
-## Estimated class population shares 
-##  0.0896 0.6081 0.3024 
-##  
-## Predicted class memberships (by modal posterior prob.) 
-##  0.0723 0.6131 0.3146 
-##  
-## ========================================================= 
-## Fit for 3 latent classes: 
-## ========================================================= 
-## number of observations: 2060 
-## number of estimated parameters: 20 
-## residual degrees of freedom: 43 
-## maximum log-likelihood: -4089.239 
-##  
-## AIC(3): 8218.477
-## BIC(3): 8331.087
-## G^2(3): 129.1797 (Likelihood ratio/deviance statistic) 
-## X^2(3): 144.5548 (Chi-square goodness of fit) 
-##  
-## ALERT: iterations finished, MAXIMUM LIKELIHOOD NOT FOUND 
-## </code></pre>
+<pre class="r"><code>postpredclass(fit2)</code></pre>
+<pre><code>##    momhlth momfit momdiet mom_myfd mom_mypa mom_mywt predClass        V1
+## 5        1      1       2        1        1        2         1 0.9918790
+## 10       1      1       2        2        1        2         1 0.5328734
+## 12       1      1       2        1        1        2         1 0.9918790
+## 14       1      1       2        1        1        2         1 0.9918790
+## 16       1      1       2        1        1        2         1 0.9918790
+## 19       1      1       2        1        1        1         1 0.9929899
+##             V2           V3
+## 5  0.008120447 5.188618e-07
+## 10 0.467126139 4.388330e-07
+## 12 0.008120447 5.188618e-07
+## 14 0.008120447 5.188618e-07
+## 16 0.008120447 5.188618e-07
+## 19 0.007007548 2.595223e-06</code></pre>
+<pre class="r"><code>cleanoutput(fit2)</code></pre>
+<pre><code>## # A tibble: 6 x 4
+##   rowname  class_1 class_2 class_3
+##   &lt;chr&gt;      &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+## 1 momhlth      0      36.1     0.5
+## 2 momfit       6.7    53.4     1.1
+## 3 momdiet    100      70.7     0  
+## 4 mom_myfd     1.5    61.7     2.3
+## 5 mom_mypa     3.1    70       2.8
+## 6 mom_mywt    88.8    90.2    61.4</code></pre>
 <p>In a 3 class model, one class includes individuals who endorse momhlth, momfit, momdiet, mom_myfd, and mom_mypa, but not mom_mywt, which is comparable to another class that has a high probability of endorsing momhealth, momfit, mom_myfd, and mom_mypa, but very unlikely to endorse momdiet, which may show that this model differentiates between mothers who actively engage in dieting and those whose attitudes towards health and exercise do not include dieting to lose weight. A third class is less likely to endorse all the items except momhlth.</p>
 </div>
 <div id="class-lca" class="section level1">
@@ -530,51 +507,51 @@ head(data)</code></pre>
 ##  
 ## $momhlth
 ##            Pr(1)  Pr(2)
-## class 1:  0.9948 0.0052
-## class 2:  0.9984 0.0016
-## class 3:  0.9258 0.0742
-## class 4:  0.4630 0.5370
+## class 1:  0.4630 0.5370
+## class 2:  0.9948 0.0052
+## class 3:  0.9984 0.0016
+## class 4:  0.9258 0.0742
 ## 
 ## $momfit
 ##            Pr(1)  Pr(2)
-## class 1:  0.9878 0.0122
-## class 2:  0.9325 0.0675
-## class 3:  1.0000 0.0000
-## class 4:  0.0406 0.9594
+## class 1:  0.0406 0.9594
+## class 2:  0.9878 0.0122
+## class 3:  0.9325 0.0675
+## class 4:  1.0000 0.0000
 ## 
 ## $momdiet
 ##            Pr(1)  Pr(2)
-## class 1:  1.0000 0.0000
-## class 2:  0.0111 0.9889
-## class 3:  0.5944 0.4056
-## class 4:  0.1431 0.8569
+## class 1:  0.1431 0.8569
+## class 2:  1.0000 0.0000
+## class 3:  0.0111 0.9889
+## class 4:  0.5944 0.4056
 ## 
 ## $mom_myfd
 ##            Pr(1)  Pr(2)
-## class 1:  0.9903 0.0097
-## class 2:  0.9947 0.0053
-## class 3:  0.4529 0.5471
-## class 4:  0.4451 0.5549
+## class 1:  0.4451 0.5549
+## class 2:  0.9903 0.0097
+## class 3:  0.9947 0.0053
+## class 4:  0.4529 0.5471
 ## 
 ## $mom_mypa
 ##            Pr(1)  Pr(2)
-## class 1:  0.9868 0.0132
-## class 2:  0.9766 0.0234
-## class 3:  0.4301 0.5699
-## class 4:  0.3146 0.6854
+## class 1:  0.3146 0.6854
+## class 2:  0.9868 0.0132
+## class 3:  0.9766 0.0234
+## class 4:  0.4301 0.5699
 ## 
 ## $mom_mywt
 ##            Pr(1)  Pr(2)
-## class 1:  0.4002 0.5998
-## class 2:  0.1130 0.8870
-## class 3:  0.0604 0.9396
-## class 4:  0.1309 0.8691
+## class 1:  0.1309 0.8691
+## class 2:  0.4002 0.5998
+## class 3:  0.1130 0.8870
+## class 4:  0.0604 0.9396
 ## 
 ## Estimated class population shares 
-##  0.5817 0.2974 0.0713 0.0496 
+##  0.0496 0.5817 0.2974 0.0713 
 ##  
 ## Predicted class memberships (by modal posterior prob.) 
-##  0.5859 0.2937 0.0743 0.0461 
+##  0.0461 0.5859 0.2937 0.0743 
 ##  
 ## ========================================================= 
 ## Fit for 4 latent classes: 
@@ -586,24 +563,40 @@ head(data)</code></pre>
 ##  
 ## AIC(4): 8155.69
 ## BIC(4): 8307.713
-## G^2(4): 52.39248 (Likelihood ratio/deviance statistic) 
-## X^2(4): 56.64481 (Chi-square goodness of fit) 
+## G^2(4): 52.39251 (Likelihood ratio/deviance statistic) 
+## X^2(4): 56.6449 (Chi-square goodness of fit) 
 ##  
 ## ALERT: iterations finished, MAXIMUM LIKELIHOOD NOT FOUND 
 ## </code></pre>
+<pre class="r"><code>postpredclass(fit3)</code></pre>
+<pre><code>##     momhlth momfit momdiet mom_myfd mom_mypa mom_mywt predClass        V1
+## 20        1      2       1        2        2        2         1 0.9994527
+## 32        1      2       1        1        2        1         1 0.7702986
+## 55        2      2       2        2        2        2         1 0.9999995
+## 70        2      2       2        2        2        2         1 0.9999995
+## 129       1      2       2        1        2        2         1 0.9244081
+## 142       2      2       2        2        2        2         1 0.9999995
+##               V2           V3           V4
+## 20  5.208100e-04 2.374027e-05 2.794674e-06
+## 32  2.261036e-01 3.596813e-03 9.493564e-07
+## 55  4.640347e-13 4.893706e-07 2.199978e-08
+## 70  4.640347e-13 4.893706e-07 2.199978e-08
+## 129 1.210633e-08 7.559156e-02 3.039917e-07
+## 142 4.640347e-13 4.893706e-07 2.199978e-08</code></pre>
+<pre class="r"><code>cleanoutput(fit3)</code></pre>
+<pre><code>## # A tibble: 6 x 5
+##   rowname  class_1 class_2 class_3 class_4
+##   &lt;chr&gt;      &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+## 1 momhlth     53.7     0.5     0.2     7.4
+## 2 momfit      95.9     1.2     6.8     0  
+## 3 momdiet     85.7     0      98.9    40.6
+## 4 mom_myfd    55.5     1       0.5    54.7
+## 5 mom_mypa    68.5     1.3     2.3    57  
+## 6 mom_mywt    86.9    60      88.7    94</code></pre>
 <p>In a 4 class LCA model, there is a class of individuals who are very likely to endorse the items momhlth, momfit, momdiet, mom_myfd, and mom_mypa, while another is very unlikely to endorse momdiet, and a third is very unlikely to endorse mom_mywt. This indicates that there is a difference in the opinions of children about a mother’s attitudes towards health and exercise based on whether the mother engages in dieting to lose weight and shows concern for weight control in the child.</p>
-<pre class="r"><code>fit3_postprob = fit3$posterior %&gt;% 
-  as_tibble()
-
-fit3$y %&gt;% 
-  add_column(fit3$predclass) %&gt;% 
-  add_column(fit3_postprob) %&gt;% 
-  rename(predClass = &quot;fit3$predclass&quot;) %&gt;% 
-  mutate(total = n()) %&gt;% 
-  group_by(momhlth, momfit, momdiet, mom_myfd, mom_mypa, mom_mywt, predClass) %&gt;% 
-  mutate(prob = round(n()/total*100, 2)) %&gt;%
-  distinct() %&gt;% 
-  arrange(desc(V4))</code></pre>
+</div>
+<div id="examples" class="section level1">
+<h1>examples</h1>
 <p>Interestingly, there are 51 unique responses, and 64 possible response outcomes (<span class="math inline">\(2^6\)</span>).</p>
 <p>The pattern 110111 is categorized in a class that has high rates of endorsement for all the items except momdiet and mom_mywt.</p>
 <p>The pattern 000000 is categorized in a class that appears less likely to endorse all the items.</p>
